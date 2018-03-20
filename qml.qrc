@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>battle_field.qml</file>
+        <file>tank.qml</file>
+        <file>logic.js</file>
+        <file>map_levels.js</file>
+        <file>tail_brick.qml</file>
+        <file>properties.js</file>
+        <file>tail_concrete.qml</file>
+    </qresource>
+</RCC>
