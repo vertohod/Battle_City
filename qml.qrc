@@ -1,12 +1,17 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>battle_field.qml</file>
         <file>tank.qml</file>
         <file>logic.js</file>
         <file>map_levels.js</file>
         <file>tail_brick.qml</file>
         <file>properties.js</file>
         <file>tail_concrete.qml</file>
+        <file>bullet.qml</file>
+        <file>counter_enemie_2.qml</file>
+        <file>counter_enemie_1.qml</file>
+        <file>first_screen.js</file>
+        <file>bang.mp3</file>
+        <file>shot.mp3</file>
     </qresource>
 </RCC>

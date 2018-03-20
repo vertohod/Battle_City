@@ -1,13 +1,12 @@
 import QtQuick 2.0
+import QtMultimedia 5.8
 import "properties.js" as Properties
 
-Rectangle {
+Item {
     id: tank
 
     width: 2 * Properties.scale
     height: 2 * Properties.scale
-    color: "yellow"
-    radius: 5
     visible: false
 
     anchors.top: parent.top
@@ -15,9 +14,30 @@ Rectangle {
     anchors.topMargin: 0
     anchors.leftMargin: 0
 
+    property int your_strange_id: 1
+
+    Rectangle {
+        id: armor
+        width: parent.width - 8
+        height: parent.height - 8
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        color: "yellow"
+        radius: 5
+    }
+
+    function change_view() {
+        armor.color = "blue";
+        armor.width = tank.width - 10;
+        armor.height = tank.height - 2;
+        armor.radius = 2;
+    }
+
     Rectangle {
         id: gun
-        color: "black"
+        color: "red"
+        border.width: 1
+        border.color: "black"
         width: 6
         height: 15
         anchors.top: parent.top
@@ -57,8 +77,12 @@ Rectangle {
     property bool moving: false
     property int x_current: 0
     property int y_current: 0
-    property int last_direction: 0
+    property int last_direction: Qt.Key_Up
     property int steps_left: 0
+    property int steps_done: 0
+    property int item_id: 0
+    property var call_back_function: null
+    property var get_next_direction: null
 
     function set_position(fl_x, fl_y) {
         x_current = fl_x;
@@ -78,10 +102,10 @@ Rectangle {
             property: "anchors.topMargin"
             from: y_animation.y_from * Properties.scale
             to: y_animation.y_to * Properties.scale
-            duration: Properties.duration
+            duration: Properties.tank_speed
         }
         onStopped: {
-            tank.move();
+            tank.move(tank.last_direction);
         }
     }
 
@@ -95,62 +119,88 @@ Rectangle {
             property: "anchors.leftMargin"
             from: x_animation.x_from * Properties.scale
             to: x_animation.x_to * Properties.scale
-            duration: Properties.duration
+            duration: Properties.tank_speed
         }
         onStopped: {
-            tank.move();
+            tank.move(tank.last_direction);
         }
     }
 
     function rotate(direction) {
-        if (direction == Qt.Key_Up) {
+        if (direction === Qt.Key_Up) {
             rotation = 0;
-        } else if (direction == Qt.Key_Down) {
+        } else if (direction === Qt.Key_Down) {
             rotation = 180;
-        } else if (direction == Qt.Key_Left) {
+        } else if (direction === Qt.Key_Left) {
             rotation = 270;
-        } else if (direction == Qt.Key_Right) {
+        } else if (direction === Qt.Key_Right) {
             rotation = 90;
         }
     }
 
-    function move() {
-        if (steps_left > 0) --tank.steps_left;
-        else {
-            moving = false;
-            return;
+    function move(direction) {
+        last_direction = direction;
+        if (steps_left === 0) {
+            var direction_pair = [0, 0];
+            if (get_next_direction !== null) {
+                direction_pair = get_next_direction();
+            }
+            if (direction_pair[0] !== 0) {
+                last_direction = direction_pair[0];
+                steps_done = 0;
+                steps_left = direction_pair[1];
+                rotate(last_direction);
+            } else {
+                moving = false;
+                return;
+            }
         }
 
         if (last_direction == Qt.Key_Down || last_direction == Qt.Key_Up) {
             var y_to = y_current + (last_direction == Qt.Key_Down ? 1 : -1);
+            call_back_function(tank, get_x(), y_to);
+            if (steps_left === 0) {
+                moving = false;
+                return;
+            }
 
-            y_animation.y_from = y_current;
+            y_animation.y_from = tank.y_current;
+            tank.y_current = y_to;
             y_animation.y_to = y_to;
-            y_current = y_to;
-
+            steps_done++;
+            steps_left--;
             y_animation.start();
         }
         if (last_direction == Qt.Key_Left || last_direction == Qt.Key_Right) {
             var x_to = x_current + (last_direction == Qt.Key_Right ? 1 : -1);
+            call_back_function(tank, x_to, get_y());
+            if (steps_left === 0) {
+                moving = false;
+                return;
+            }
 
-            x_animation.x_from = x_current;
+            x_animation.x_from = tank.x_current;
+            tank.x_current = x_to;
             x_animation.x_to = x_to;
-            x_current = x_to;
-
+            steps_done++;
+            steps_left--;
             x_animation.start();
         }
     }
 
     function go(direction, steps) {
-        if (moving || steps === 0) return;
+        if (moving) return false;
 
-        last_direction = direction;
-        steps_left = steps;
-
-        moving = true;
+        steps_done = 0;
         rotate(direction);
+        last_direction = direction; // it necessary to fire in right direction
 
-        move(direction);
+        if (steps !== 0) {
+            steps_left = steps;
+            moving = true;
+            move(direction);
+        }
+        return true;
     }
 
     function stop() {
@@ -159,5 +209,45 @@ Rectangle {
 
     function fire() {
         gun.fire();
+    }
+
+    function get_your_stranger_id() {
+        return tank.your_strange_id;
+    }
+
+    function set_your_stranger_id(id) {
+        tank.your_strange_id = id;
+    }
+
+    function get_x() {
+        return tank.x_current;
+    }
+
+    function get_y() {
+        return tank.y_current;
+    }
+
+    function get_direction() {
+        return last_direction;
+    }
+
+    function get_steps_done() {
+        return steps_done;
+    }
+
+    function get_item_id() {
+        return item_id;
+    }
+
+    function set_item_id(it_id) {
+        item_id = it_id;
+    }
+
+    function set_call_back(func) {
+        call_back_function = func;
+    }
+
+    function set_function_get_next_direction(func) {
+        get_next_direction = func;
     }
 }
